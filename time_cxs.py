@@ -12,7 +12,7 @@ from datetime import datetime
 import pickle
 import argparse
 
-class CxRecord:
+class CxRecord(object):
 	'''To hold data for specific episodes of measurement, timestamped.
 	'''
 	def __init__(self, pickle_stub=None, logfile="cx_log.txt"):
@@ -20,39 +20,23 @@ class CxRecord:
 		self.ends = []
 		self.lengths = []
 		self.diffs = None
-		#self._median_length = median_length
-		#self._median_interval = median_interval
-		self.date_and_time = datetime.now().replace(" ", "_")
+		self.median_length = None
+		self.median_interval = None
+		self.date_and_time = str(datetime.now()).replace(" ", "_")
 		if pickle_stub is None:
 			self.pickle_path = "cx_{0}.pkl".format(self.date_and_time)
 		else:
 			self.pickle_path = "cx_{0}.pkl".format(pickle_stub)
 	
-	@property
-	def median_length(self):
-		'''compute/return the median cx length for a given episode'''
-		return self._median_length
-	
-	@median_length.setter
-	def median_length(self):
-		self._median_length = compute_median(self.lengths)
-	
-	@property
-	def median_interval(self):
-		'''compute/return the median interval between cxs for a given episode'''
-		return self._median_interval
-		
-	@median_interval.setter	
-	def median_interval(self):
-		self.diffs = diff_time_series(self.begins)
-		self._median_interval = compute_median(self.diffs)
-	
 	def pickle_record(self):
-		pickle.dump(self, file=self.pickle_path)
+		pkl_file = open(self.pickle_path, "w")
+		pickle.dump(self, file=pkl_file)
 		
-	#def load_record(self, begin, end):
-	#	self.begins.append(begin)
-	#	self.lengths.append(end - begin)
+	def compute_stats(self):
+		print("computing stats")
+		self.median_length = compute_median(self.lengths)
+		self.diffs = diff_time_series(self.begins)
+		self.median_interval = compute_median(self.diffs)
 	
 	def record_cx_episode(self):
 		cx_lengths = []
@@ -63,21 +47,24 @@ class CxRecord:
 			cx_begin, cx_end = time_cx()
 			if str(cx_end).lower() == "done":
 				break
-			cx_delta = cx_end - cx_begin
-			elif str(cx_end).lower() is None:
+			elif cx_end is None:
 				continue
 			else:
+				cx_delta = cx_end - cx_begin
 				cx_lengths.append(cx_delta)
+			
 			cx_begins.append(cx_begin)
 			cx_ends.append(cx_end)
 			it+=1
 			print("{0} contractions measured".format(it))
-		self.cx_lengths = cx_lengths
-		self.cx_begins = cx_begins
-		self.cx_ends = cx_ends
+		
+		self.lengths = cx_lengths
+		self.begins = cx_begins
+		self.ends = cx_ends
+		self.compute_stats()
 	
-	def compute_and_report_stats(self):
-		stat_report = "Cx beginning at {}\n".format(self.begins[0])
+	def report_stats(self):
+		stat_report = "{0} Cx beginning at {1}\n".format(len(self.begins), self.begins[0])
 		stat_report += "Median cx length {}\n".format(self.median_length)
 		stat_report += "Median cx interval {}\n".format(self.median_interval)
 		print(stat_report)
@@ -108,11 +95,12 @@ def run_cx_loop():
 		cx_begin, cx_end = time_cx()
 		if str(cx_end).lower() == "done":
 			break
-		cx_delta = cx_end - cx_begin
 		elif str(cx_end).lower() is None:
 			continue
 		else:
 			cx_lengths.append(cx_delta)
+			cx_delta = cx_end - cx_begin
+		
 		cx_begins.append(cx_begin)
 		it+=1
 		print("{0} contractions measured".format(it))
@@ -178,17 +166,20 @@ def make_cx_record():
 def parse_args():
 	parser = argparse.ArgumentParser(description='contraction timer.')
 	parser.add_argument('--out_archive', '-o', type=str, required=False, default=None,
-                        help='prefix to use in pickle of record. Default is timestamp.')
-    parser.add_argument('--out_log', '-l', type=str, required=False, default="cx_log.txt")
-                        help='human-readable log file to append to. Default is' 			
-                        'cx_log.txt.')
+						help='prefix to use in pickle of record. Default is timestamp.')
+	parser.add_argument('--out_log', '-l', type=str, required=False, default="cx_log.txt",
+						help='human-readable log file to append to. Default is' 			
+						'cx_log.txt.')
+	args = parser.parse_args()
+	return vars(args)
+    
     
 def main():
 	args = parse_args()
 	CXR = CxRecord(pickle_stub=args["out_archive"], logfile=args["out_log"])
 	CXR.record_cx_episode()
-	CXR.compute_and_report_stats()
-	write_cx_data_to_log(cx_begins=CXR.begins, cx_lengths=CXR.lengths)
+	CXR.report_stats()
+	write_cx_data_to_log(cx_begins=CXR.begins, cx_lengths=CXR.lengths, logfile=args["out_log"])
 	CXR.pickle_record()
 	
 if __name__ == "__main__":
