@@ -15,10 +15,10 @@ import argparse
 class CxRecord:
 	'''To hold data for specific episodes of measurement, timestamped.
 	'''
-	def __init__(self, cx_lengths, cx_begins, pickle_stub=None, logfile="cx_log.txt"):
+	def __init__(self, pickle_stub=None, logfile="cx_log.txt"):
 		self.begins = []
 		self.ends = []
-		self.lengths = None
+		self.lengths = []
 		self.diffs = None
 		#self._median_length = median_length
 		#self._median_interval = median_interval
@@ -50,13 +50,14 @@ class CxRecord:
 	def pickle_record(self):
 		pickle.dump(self, file=self.pickle_path)
 		
-	def load_record(self, begin, end):
-		self.begins.append(begin)
-		self.lengths.append(end - begin)
+	#def load_record(self, begin, end):
+	#	self.begins.append(begin)
+	#	self.lengths.append(end - begin)
 	
-	def record_cx_episode():
+	def record_cx_episode(self):
 		cx_lengths = []
 		cx_begins = []
+		cx_ends = []
 		it = 0
 		while True:
 			cx_begin, cx_end = time_cx()
@@ -68,11 +69,18 @@ class CxRecord:
 			else:
 				cx_lengths.append(cx_delta)
 			cx_begins.append(cx_begin)
+			cx_ends.append(cx_end)
 			it+=1
 			print("{0} contractions measured".format(it))
 		self.cx_lengths = cx_lengths
 		self.cx_begins = cx_begins
 		self.cx_ends = cx_ends
+	
+	def compute_and_report_stats(self):
+		stat_report = "Cx beginning at {}\n".format(self.begins[0])
+		stat_report += "Median cx length {}\n".format(self.median_length)
+		stat_report += "Median cx interval {}\n".format(self.median_interval)
+		print(stat_report)
 	
 
 # to become methods of the CxRecord class (at some point!!!)
@@ -167,9 +175,22 @@ def make_cx_record():
 	median_cx, median_diffs, diffs = compute_cx_stats(cx_lengths, cx_begins)
 	write_cx_data_to_log(cx_begins=cx_begins, cx_lengths=cx_lengths)
 	
-
-	
-	
+def parse_args():
+	parser = argparse.ArgumentParser(description='contraction timer.')
+	parser.add_argument('--out_archive', '-o', type=str, required=False, default=None,
+                        help='prefix to use in pickle of record. Default is timestamp.')
+    parser.add_argument('--out_log', '-l', type=str, required=False, default="cx_log.txt")
+                        help='human-readable log file to append to. Default is' 			
+                        'cx_log.txt.')
+    
+def main():
+	args = parse_args()
+	CXR = CxRecord(pickle_stub=args["out_archive"], logfile=args["out_log"])
+	CXR.record_cx_episode()
+	CXR.compute_and_report_stats()
+	write_cx_data_to_log(cx_begins=CXR.begins, cx_lengths=CXR.lengths)
+	CXR.pickle_record()
 	
 if __name__ == "__main__":
-	make_cx_record()
+	#make_cx_record()
+	main()
