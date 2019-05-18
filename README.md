@@ -2,7 +2,10 @@
 for measuring and keeping records of contractions.
 
 ## INSTALLATION:
+
+```
 git clone https://github.com/maximilianpress/cx_timer
+```
 
 ## USAGE:
 
