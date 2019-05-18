@@ -1,7 +1,10 @@
 # cx_timer
 for measuring and keeping records of contractions.
 
-USAGE:
+## INSTALLATION:
+git clone https://github.com/maximilianpress/cx_timer
+
+## USAGE:
 
 In a terminal, run this:
 
