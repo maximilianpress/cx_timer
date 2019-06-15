@@ -73,11 +73,11 @@ class CxRecord(object):
 def time_cx():
 	'''Actually collect the data (user-input) on a specific contraction time.
 	'''
-	input = raw_input("press enter to indicate beginning of Cx, or 'done' to finish and compute from collected data.\n")
+	input = raw_input("press enter to indicate beginning of Cx, or type 'done' (+enter) to finish and compute from collected data.\n")
 	begin = datetime.now()
 	if input == "done":
 		return "done", "done"
-	input = raw_input("press enter to indicate end of Cx, or 'next' to skip to next Cx beginning.\n")
+	input = raw_input("press enter to indicate end of Cx, or type 'next' (+enter) to skip to next Cx beginning.\n")
 	end = datetime.now()
 	if input == "next":
 		return None, None
@@ -102,6 +102,10 @@ def compute_median(list):
 		Args:
 			list ([int] or [float]): numbers to compute a median of
 	'''
+	if len(list) == 1:
+		return list[0]
+	elif len(list) == 0:
+		return None
 	list.sort()
 	midpoint = len(list) / 2.0
 	if len(list) % 2 == 0:
