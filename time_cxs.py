@@ -94,6 +94,7 @@ def diff_time_series(cx_begins):
 		else:
 			diff = cx - last_time
 			diffs.append(diff.total_seconds())
+			last_time = cx
 	return diffs
 	
 def compute_median(list):
